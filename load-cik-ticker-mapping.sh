@@ -1,0 +1,1 @@
+curl "http://rankandfiled.com/static/export/cik_ticker.csv" -o "./data/cik_ticker.csv"

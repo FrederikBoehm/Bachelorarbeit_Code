@@ -10,7 +10,7 @@ def createHistoricSandPComposition():
     unavailable_tickers = set()
     historical_component_list = []
     for label, column in df_composition.iteritems():
-        if (label == '31/12/2003'):
+        if (label == '30/09/2003'):
             break
         
         if ((label != 'Ticker') and (label != 'ISIN Code') and (label != 'Company Name')):
@@ -21,7 +21,7 @@ def createHistoricSandPComposition():
                 if line_content == 'X':
                     ticker = df_composition['Ticker'][index]
                     #cik = df_cik_ticker.loc[df_cik_ticker['Ticker'] == ticker, 'CIK'].values[0]
-                    ticker = re.sub('\s\(\S*\)', '', ticker)
+                    ticker = re.sub(r'\s\(\S*\)', '', ticker)
                     cik = ''
                     for index2, line_content2 in enumerate(df_cik_ticker['Ticker']):
                         if line_content2 == ticker:

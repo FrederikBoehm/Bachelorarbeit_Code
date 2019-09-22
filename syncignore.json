@@ -1,0 +1,6 @@
+{
+    "ignorepaths": [
+        "./.git",
+        "./data"
+    ]
+}

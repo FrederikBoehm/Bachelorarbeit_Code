@@ -18,7 +18,7 @@ class BasicHandler(FileSystemEventHandler):
         output = ''
         path = self._get_Path(event.src_path)
 
-        if not event.src_path(tuple(self.syncignore)):
+        if not event.src_path.startswith(tuple(self.syncignore)):
             if event.is_directory:
                 logging.log(level = logging.INFO, msg = 'Creating directory ' + path)
                 output = subprocess.run(['ssh', f'ubuntu@{self.host}', f'mkdir -p {path}'], stdout=subprocess.PIPE)
@@ -32,7 +32,7 @@ class BasicHandler(FileSystemEventHandler):
         output = ''
         path = self._get_Path(event.src_path)
 
-        if not event.src_path(tuple(self.syncignore)):
+        if not event.src_path.startswith(tuple(self.syncignore)):
             if event.is_directory:
                 logging.log(level=logging.INFO, msg = 'Deleting directory ' + path)
                 output = subprocess.run(['ssh', f'ubuntu@{self.host}', f'rmdir -p {path}'], stdout=subprocess.PIPE)
@@ -47,7 +47,7 @@ class BasicHandler(FileSystemEventHandler):
         output = ''
         path = self._get_Path(event.src_path)
 
-        if not event.src_path(tuple(self.syncignore)):
+        if not event.src_path.startswith(tuple(self.syncignore)):
             if not event.is_directory:
                 logging.log(level=logging.INFO, msg=f'Updating file {path} from {event.src_path}')
                 output = subprocess.run(['scp', event.src_path, f'ubuntu@{self.host}:{path}'], stdout=subprocess.PIPE)

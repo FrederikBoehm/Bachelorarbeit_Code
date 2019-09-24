@@ -4,6 +4,10 @@ import re
 from spacy.lang.en import English
 import os
 import json
+import sys
+import logging
+import subprocess
+from create_pretraining_data import createPretrainingData
 
 def prepareDataForBert():
     print('Loading file summaries...')
@@ -38,9 +42,9 @@ def prepareDataForBert():
                 report = f.read()
 
                 print('Starting preprocessing for ' + report_file_path)
-                report = _remove_header(report)
-                report = _remove_exhibits(report)
-                report = _make_single_line(report)
+                report = _removeHeader(report)
+                report = _removeExhibits(report)
+                report = _makeSingleLine(report)
 
                 sentences = _splitReportToSentences(report)                
 
@@ -74,7 +78,7 @@ def prepareDataForBert():
         checkpoint_file.write(json.dumps(checkpoint))
         checkpoint_file.close()
 
-def _remove_header(input):
+def _removeHeader(input):
     regex = r'<\/Header>'
     match = re.search(regex, input)
     if match:
@@ -83,7 +87,7 @@ def _remove_header(input):
     else:
         return input
 
-def _remove_exhibits(input):
+def _removeExhibits(input):
     regex = r'<EX-.*>'
     match = re.search(regex, input)
     if match:
@@ -92,7 +96,7 @@ def _remove_exhibits(input):
     else:
         return input
 
-def _make_single_line(input):
+def _makeSingleLine(input):
     regex = r'\s+'
     return re.sub(regex, ' ', input)
 
@@ -120,4 +124,18 @@ def _splitReportToSentences(report):
     return sentences
 
 if __name__ == "__main__":
-    prepareDataForBert()
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+    if len(sys.argv) < 2:
+        logging.log(level = logging.ERROR, msg='No parameter specified')
+    else:
+        parameter = sys.argv[1]
+        if parameter == 'prepare-data-for-bert':
+            logging.log(level = logging.INFO, msg='Starting prepareDataForBert()')
+            prepareDataForBert()
+        elif parameter == 'create-pretraining-data':
+            logging.log(level = logging.INFO, msg='Starting createPretrainingData()')
+            createPretrainingData()
+        else:
+            logging.log(level = logging.ERROR, msg=f'No script for {parameter}')

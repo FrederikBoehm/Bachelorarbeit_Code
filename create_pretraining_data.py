@@ -26,7 +26,7 @@ def createPretrainingData():
 
     all_files = glob.glob(FLAGS["input_file"])
     random.shuffle(all_files)
-    for index, single_file in enumerate(all_files[:10]):
+    for index, single_file in enumerate(all_files):
 
         tokenizer = FullTokenizer(
             vocab_file=FLAGS["vocab_file"], do_lower_case=FLAGS["do_lower_case"])

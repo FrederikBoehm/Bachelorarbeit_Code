@@ -8,6 +8,8 @@ import sys
 import logging
 import subprocess
 from create_pretraining_data import createPretrainingData
+from multiprocessing import Process, current_process, cpu_count, Queue
+import time
 
 def prepareDataForBert():
     print('Loading file summaries...')
@@ -24,29 +26,69 @@ def prepareDataForBert():
     checkpoint = json.load(checkpoint_file)
     checkpoint_file.close()
 
-    # historic_composition_date = 20031231
     historic_composition_date = checkpoint["historic_composition_date"] if checkpoint["historic_composition_date"] else 20031231
-    historic_composition_at_date = df_historic_composition[df_historic_composition['Date'] == historic_composition_date].values
-    # count = 0
-    count = checkpoint["count"] if checkpoint["count"] else 0
     init_index = checkpoint["index"] if checkpoint["index"] else 0
 
     if init_index == 0:
         multiline_report_index = open('./data/multiline_report_index.csv', 'w')
-        multiline_report_index.write('CIK\tTicker\tCompany\tFiling_Date\tFile_Path\n')
+        multiline_report_index.write('CIK\tTicker\tCompany\tFiling_Date\tForm_Type\tFile_Path\n')
         multiline_report_index.close()
+
+    cpu_cores = cpu_count()
+    print(f'Detected {cpu_cores} cores, splitting dataset...')
+    start_indexes = []
+    for index in range(cpu_cores):
+        start_index = init_index + index
+        if (start_index < len(df_file_summaries.index)):
+            start_indexes.append(start_index)
+
+    print(start_indexes)
+    if not os.path.exists('./data/multiline_reports'):
+        os.makedirs('./data/multiline_reports')
+
+    queue = Queue()
         
-    for index, cik in enumerate(df_file_summaries['CIK'][init_index:], start=init_index):
+    document_parsing_processes = []
+    for start_index in start_indexes:
+        
+        process = Process(target=_handleDocumentParsing, args=(df_file_summaries,
+                                                               df_cik_ticker_mapping,
+                                                               df_historic_composition,
+                                                               start_index,
+                                                               historic_composition_date,
+                                                               len(start_indexes),
+                                                               queue))
+        process.start()
+        document_parsing_processes.append(process)
+
+    index_building_process = Process(target=_buildIndexFile, args=(queue, len(start_indexes)))
+    index_building_process.daemon = True
+    index_building_process.start()
+
+    for process in document_parsing_processes:
+        process.join()
+
+    index_building_process.join()
+
+    print('Finished work.')
+
+
+def _handleDocumentParsing(df_file_summaries, df_cik_ticker_mapping, df_historic_composition, init_index, historic_composition_date, spawned_processes, output_queue):
+    process_id = os.getpid()
+    historic_composition_at_date = df_historic_composition[df_historic_composition['Date'] == historic_composition_date].values
+
+    # for index, cik in enumerate(df_file_summaries['CIK'][init_index::spawned_processes], start=init_index):
+    for index, cik in _enumerate(df_file_summaries['CIK'], start=init_index, step=spawned_processes):
         # if historic_composition_at_date.contains(cik):
         if cik in historic_composition_at_date:
             print('Progressing for CIK ' + str(cik))
             report_file_path = df_file_summaries['FILE_NAME'].iloc[index]
             report_file_path = report_file_path.replace('D:', './data').replace('\\', '/')
             
+            print('Starting preprocessing for ' + report_file_path)
             f = open(report_file_path, 'r')
             report = f.read()
 
-            print('Starting preprocessing for ' + report_file_path)
             report = _removeHeader(report)
             report = _removeExhibits(report)
             report = _makeSingleLine(report)
@@ -56,39 +98,98 @@ def prepareDataForBert():
             seperator = '\n'
             multiline_report = seperator.join(sentences)
 
-            if not os.path.exists('./data/multiline_reports'):
-                os.makedirs('./data/multiline_reports')
-
-            output_file_path = './data/multiline_reports/multiline_report' + str(count)
+            output_file_path = './data/multiline_reports/multiline_report' + str(index)
             output_file = open(output_file_path, 'w+')
             output_file.write(multiline_report)
             output_file.close()
-            count = count + 1
             print('Wrote processed report to ' + output_file_path)
 
-            print('Building Index file...')
-            filing_date = df_file_summaries['FILING_DATE'].iloc[index]
-            ticker = df_cik_ticker_mapping.loc[df_cik_ticker_mapping['CIK'] == cik, 'Ticker'].iloc[0]
-            company = df_cik_ticker_mapping.loc[df_cik_ticker_mapping['CIK'] == cik, 'Name'].iloc[0]
-            print(f'Adding entry with CIK {cik}, Ticker {ticker}, Company {company}, Filing Date {filing_date}, Output File Path {output_file_path} .')
-            multiline_report_index = open('./data/multiline_report_index.csv', 'a')
-            multiline_report_index.write(f'{cik}\t{ticker}\t{company}\t{filing_date}\t{output_file_path}\n')
-            multiline_report_index.close()
+            output_data = {}
+            output_data['filing_date'] = df_file_summaries['FILING_DATE'].iloc[index]
+            output_data['form_type'] = df_file_summaries['FORM_TYPE'].iloc[index]
+            output_data['ticker'] = df_cik_ticker_mapping.loc[df_cik_ticker_mapping['CIK'] == cik, 'Ticker'].iloc[0]
+            output_data['cik'] = cik
+            output_data['company'] = df_cik_ticker_mapping.loc[df_cik_ticker_mapping['CIK'] == cik, 'Name'].iloc[0]
+            output_data['output_file_path'] = output_file_path
+            output_data['index'] = index
+            output_data['historic_composition_date'] = historic_composition_date
+            
+            process_output = {}
+            process_output[f'{process_id}'] = output_data
 
+            output_queue.put(process_output)
 
         if (df_file_summaries['FILING_DATE'].iloc[index] != historic_composition_date) & (df_historic_composition['Date'].eq(df_file_summaries['FILING_DATE'].iloc[index]).any()):
             historic_composition_date = df_file_summaries['FILING_DATE'].iloc[index]
             historic_composition_at_date = df_historic_composition[df_historic_composition['Date'] == historic_composition_date].values
             print('Changed composition timestamp to ' + str(historic_composition_date))
+            
 
-        checkpoint_file = open('./data-preparation.checkpoint.json', 'w', encoding='utf-8')
-        checkpoint = {
-            "historic_composition_date": int(historic_composition_date),
-            "index": index,
-            "count": count
-        }
-        checkpoint_file.write(json.dumps(checkpoint))
-        checkpoint_file.close()
+    print(f'Process {process_id} finished data preparation.')
+    process_output = {}
+    process_output[f'{process_id}'] = 'FINISHED'
+
+    output_queue.put(process_output)
+
+def _enumerate(iterable, start=0, step=1):
+
+    index = start
+    iterable_list = list(iterable)
+    iterable_length = len(iterable_list)
+    while index < iterable_length:
+        yield (index, iterable_list[index])
+        index = index + step
+
+
+
+def _buildIndexFile(input_queue, spawned_processes):
+    finished_processes = []
+
+    previous_index = 0
+    while len(finished_processes) < spawned_processes:
+        output_from_working_processes = []
+        while not input_queue.empty():
+            output_from_working_process = input_queue.get()
+            pid = list(output_from_working_process.keys())[0]
+
+            if output_from_working_process[f'{pid}'] == 'FINISHED':
+                finished_processes.append(pid)
+            else:
+                output_from_working_processes.append(output_from_working_process[f'{pid}'])
+
+        output_from_working_processes.sort(key=lambda process_output: process_output['index'])
+
+        for process_output in output_from_working_processes:
+            print('Building Index file...')
+            filing_date = process_output['filing_date']
+            form_type = process_output['form_type']
+            ticker = process_output['ticker']
+            cik = process_output['cik']
+            company = process_output['company']
+            output_file_path = process_output['output_file_path']
+            
+            print(f'Adding entry with CIK {cik}, Ticker {ticker}, Company {company}, Filing Date {filing_date}, Form Type {form_type} Output File Path {output_file_path} .')
+            multiline_report_index = open('./data/multiline_report_index.csv', 'a')
+            multiline_report_index.write(f'{cik}\t{ticker}\t{company}\t{filing_date}\t{form_type}\t{output_file_path}\n')
+            multiline_report_index.close()
+
+        if (len(output_from_working_processes) > 0):
+            last_output = output_from_working_processes[0]
+            index = last_output['index']
+            historic_composition_date = last_output['historic_composition_date']
+            if (previous_index < index):
+                print(f'Updating checkpoint. Index: {index}, Historic Composition date: {historic_composition_date}')
+                checkpoint_file = open('./data-preparation.checkpoint.json', 'w', encoding='utf-8')
+                checkpoint = {
+                    "historic_composition_date": int(historic_composition_date),
+                    "index": index
+                }
+                checkpoint_file.write(json.dumps(checkpoint))
+                checkpoint_file.close()
+                previous_index = index
+
+    print('Finished building index file.')
+
 
 def _removeHeader(input):
     regex = r'<\/Header>'

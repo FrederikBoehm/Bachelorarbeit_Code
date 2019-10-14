@@ -13,6 +13,16 @@ class BasicHandler(FileSystemEventHandler):
         super().__init__()
         self.host = host
         self.syncignore = syncignore
+        if 'amazonaws' in host:
+            self.workspace_dir = '/home/ubuntu/Bachelorarbeit'
+            user_dir = os.environ['userprofile']
+            self.ssh_dir = f'{user_dir}/.ssh/id_rsa'
+            self.user = 'ubuntu'
+        else:
+            self.workspace_dir = '/mnt/md0/user/boehmfr68270/Bachelorarbeit'
+            user_dir = os.environ['userprofile']
+            self.ssh_dir = f'{user_dir}/.ssh/ohm'
+            self.user = 'boehmfr68270'
     
     def on_created(self, event):
         output = ''
@@ -21,10 +31,10 @@ class BasicHandler(FileSystemEventHandler):
         if not event.src_path.startswith(tuple(self.syncignore)):
             if event.is_directory:
                 logging.log(level = logging.INFO, msg = 'Creating directory ' + path)
-                output = subprocess.run(['ssh', f'ubuntu@{self.host}', f'mkdir -p {path}'], stdout=subprocess.PIPE)
+                output = subprocess.run(['ssh', '-i', f'{self.ssh_dir}', f'{self.user}@{self.host}', f'mkdir -p {path}'], stdout=subprocess.PIPE)
             else:
                 logging.log(level = logging.INFO, msg = f'Copying new file {event.src_path} to {path}')
-                output = subprocess.run(['scp', event.src_path, f'ubuntu@{self.host}:{path}'], stdout=subprocess.PIPE)
+                output = subprocess.run(['scp', '-i', f'{self.ssh_dir}', event.src_path, f'{self.user}@{self.host}:{path}'], stdout=subprocess.PIPE)
             
             logging.log(level = logging.INFO, msg=output)
 
@@ -35,10 +45,10 @@ class BasicHandler(FileSystemEventHandler):
         if not event.src_path.startswith(tuple(self.syncignore)):
             if event.is_directory:
                 logging.log(level=logging.INFO, msg = 'Deleting directory ' + path)
-                output = subprocess.run(['ssh', f'ubuntu@{self.host}', f'rmdir -p {path}'], stdout=subprocess.PIPE)
+                output = subprocess.run(['ssh', '-i', f'{self.ssh_dir}', f'{self.user}@{self.host}', f'rmdir -p {path}'], stdout=subprocess.PIPE)
             else:
                 logging.log(level = logging.INFO, msg = 'Deleting file ' + path)
-                output = subprocess.run(['ssh', f'ubuntu@{self.host}', f'rm -f {path}'], stdout=subprocess.PIPE)
+                output = subprocess.run(['ssh', '-i', f'{self.ssh_dir}', f'{self.user}@{self.host}', f'rm -f {path}'], stdout=subprocess.PIPE)
 
             logging.log(level = logging.INFO, msg=output)
         
@@ -50,14 +60,14 @@ class BasicHandler(FileSystemEventHandler):
         if not event.src_path.startswith(tuple(self.syncignore)):
             if not event.is_directory:
                 logging.log(level=logging.INFO, msg=f'Updating file {path} from {event.src_path}')
-                output = subprocess.run(['scp', event.src_path, f'ubuntu@{self.host}:{path}'], stdout=subprocess.PIPE)
+                output = subprocess.run(['scp', '-i', f'{self.ssh_dir}', event.src_path, f'{self.user}@{self.host}:{path}'], stdout=subprocess.PIPE)
 
             logging.log(level = logging.INFO, msg=output)
 
     def _get_Path(self, event_path):
         event_path = event_path.replace('\\', '/')
         event_path = event_path[1:]
-        path = '/home/ubuntu/Bachelorarbeit' + event_path
+        path = self.workspace_dir + event_path
         return path
 
 if __name__ == "__main__":

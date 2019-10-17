@@ -24,7 +24,7 @@ from absl import logging
 
 import collections
 import random
-import official.nlp.bert.tokenization
+import bert.tokenization
 import tensorflow as tf
 
 
@@ -82,13 +82,13 @@ class TrainingInstance(object):
   def __str__(self):
     s = ""
     s += "tokens: %s\n" % (" ".join(
-        [official.nlp.bert.tokenization.printable_text(x) for x in self.tokens]))
+        [bert.tokenization.printable_text(x) for x in self.tokens]))
     s += "segment_ids: %s\n" % (" ".join([str(x) for x in self.segment_ids]))
     s += "is_random_next: %s\n" % self.is_random_next
     s += "masked_lm_positions: %s\n" % (" ".join(
         [str(x) for x in self.masked_lm_positions]))
     s += "masked_lm_labels: %s\n" % (" ".join(
-        [official.nlp.bert.tokenization.printable_text(x) for x in self.masked_lm_labels]))
+        [bert.tokenization.printable_text(x) for x in self.masked_lm_labels]))
     s += "\n"
     return s
 
@@ -151,7 +151,7 @@ def write_instance_to_example_files(instances, tokenizer, max_seq_length,
     if inst_index < 20:
       logging.info("*** Example ***")
       logging.info("tokens: %s" % " ".join(
-          [official.nlp.bert.tokenization.printable_text(x) for x in instance.tokens]))
+          [bert.tokenization.printable_text(x) for x in instance.tokens]))
 
       for feature_name in features.keys():
         feature = features[feature_name]
@@ -194,7 +194,7 @@ def create_training_instances(input_files, tokenizer, max_seq_length,
   for input_file in input_files:
     with tf.io.gfile.GFile(input_file, "r") as reader:
       while True:
-        line = official.nlp.bert.tokenization.convert_to_unicode(reader.readline())
+        line = bert.tokenization.convert_to_unicode(reader.readline())
         if not line:
           break
         line = line.strip()
@@ -439,7 +439,7 @@ def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
 def main(_):
   logging.set_verbosity(logging.INFO)
 
-  tokenizer = official.nlp.bert.tokenization.FullTokenizer(
+  tokenizer = bert.tokenization.FullTokenizer(
       vocab_file=FLAGS.vocab_file, do_lower_case=FLAGS.do_lower_case)
 
   input_files = []

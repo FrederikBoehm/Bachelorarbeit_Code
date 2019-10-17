@@ -3,8 +3,8 @@ import tensorflow as tf
 from absl import logging
 from absl import flags
 
-from official.nlp.bert.tokenization import FullTokenizer
-from official.nlp.bert.create_pretraining_data import create_training_instances, write_instance_to_example_files
+from bert.tokenization import FullTokenizer
+from bert.create_pretraining_data import create_training_instances, write_instance_to_example_files
 import random
 import os
 import glob
@@ -13,19 +13,6 @@ import pandas as pd
 
 def createPretrainingData():
     FLAGS = flags.FLAGS
-    # FLAGS = {}
-    # FLAGS["input_file"] = "./data/multiline_reports/multiline_report*"
-    # FLAGS["output_file"] = "./data/bert_pretraining_data/seq_128/tf_examples.tfrecord"
-    # FLAGS["vocab_file"] = "./data/BERT/uncased_L-12_H-768_A-12/vocab.txt"
-    # FLAGS["do_lower_case"] = True
-    # FLAGS["max_seq_length"] = 128
-    # FLAGS["max_predictions_per_seq"] = 20
-    # FLAGS["masked_lm_prob"] = 0.15
-    # FLAGS["random_seed"] = 12345
-    # FLAGS["dupe_factor"] = 5
-    # FLAGS["do_whole_word_mask"] = False
-    # FLAGS["short_seq_prob"] = 0.1
-
     FLAGS.vocab_file = "./data/BERT/uncased_L-12_H-768_A-12/vocab.txt"
     FLAGS.do_lower_case = True
     FLAGS.max_seq_length = 128
@@ -33,7 +20,7 @@ def createPretrainingData():
     FLAGS.masked_lm_prob = 0.15
     FLAGS.random_seed = 12345
     FLAGS.dupe_factor = 5
-    FLAGS.do_whole_word_mask = False
+    # FLAGS.do_whole_word_mask = False
     FLAGS.short_seq_prob = 0.1
     FLAGS.mark_as_parsed()
 
@@ -44,12 +31,12 @@ def createPretrainingData():
     # random.shuffle(all_files)
     # Split array in similar sized arrays an spawn new process for each of them
 
-    # df_train = pd.read_csv('./data/multiline_report_index_train.csv', sep='\t')
-    # train_files = df_train['File_Path']
-    # train_output_dir = f"./data/bert_pretraining_data/seq_{max_seq_length}/train"
-    # if not os.path.exists(train_output_dir):
-    #     os.makedirs(train_output_dir)
-    # _createData(train_files, output_dir = train_output_dir)
+    df_train = pd.read_csv('./data/multiline_report_index_train.csv', sep='\t')
+    train_files = df_train['File_Path']
+    train_output_dir = f"./data/bert_pretraining_data/seq_{max_seq_length}/train"
+    if not os.path.exists(train_output_dir):
+        os.makedirs(train_output_dir)
+    _createData(train_files, output_dir = train_output_dir)
 
     df_validate = pd.read_csv('./data/multiline_report_index_validate.csv', sep='\t')
     validate_files = df_validate['File_Path']
@@ -89,18 +76,6 @@ def _handlePretrainingDataCreation(files, start_index, end_index, output_dir):
     process_id = os.getpid()
     print(f'Process {process_id} handling files from {start_index} to {end_index}')
 
-    # FLAGS = {}
-    # FLAGS["output_file"] = "./data/bert_pretraining_data/seq_128/tf_examples.tfrecord"
-    # FLAGS["output_file"] = output_dir + "/" + "tf_examples.tfrecord"
-    # FLAGS["vocab_file"] = "./data/BERT/uncased_L-12_H-768_A-12/vocab.txt"
-    # FLAGS["do_lower_case"] = True
-    # FLAGS["max_seq_length"] = 128
-    # FLAGS["max_predictions_per_seq"] = 20
-    # FLAGS["masked_lm_prob"] = 0.15
-    # FLAGS["random_seed"] = 12345
-    # FLAGS["dupe_factor"] = 5
-    # FLAGS["do_whole_word_mask"] = False
-    # FLAGS["short_seq_prob"] = 0.1
     FLAGS = flags.FLAGS
     FLAGS.output_file = output_dir + "/" + "tf_examples.tfrecord"
     for index, single_file in enumerate(files, start_index):

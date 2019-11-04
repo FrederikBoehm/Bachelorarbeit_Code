@@ -93,7 +93,9 @@ def _handleDocumentParsing(df_file_summaries, df_cik_ticker_mapping, df_historic
             report = _removeExhibits(report)
             report = _makeSingleLine(report)
 
-            sentences = _splitReportToSentences(report)                
+            sentences = _splitReportToSentences(report)      
+
+            sentences = _getMeaningfulSequences(sentences)          
 
             seperator = '\n'
             multiline_report = seperator.join(sentences)
@@ -234,6 +236,18 @@ def _splitReportToSentences(report):
         sentences.extend(_splitReportToSentences(sliced_report))
 
     return sentences
+
+def _getMeaningfulSequences(sequences):
+    output_sequences = []
+    for sequence in sequences:
+        number_of_words = len(re.findall(r'\w+', sequence))
+        capital_sequence = lambda string: re.search(r'[A-Z]+\s+[A-Z]+', string) # We match for sequences like "NOTES TO CONDENSED CONSOLIDATED FINANCIAL STATEMENTS"
+        toc_match = lambda string: re.search(r'table of contents', string, re.IGNORECASE) # We match for sequences which were links to the toc
+        repeated_characters = lambda string: re.search(r'(.)\1{2,}', string) # We match for sequences like ... or --- which indicate a headline or table
+        if number_of_words >= 8 and number_of_words <= 95 and not capital_sequence(sequence) and not toc_match(sequence) and not repeated_characters(sequence):
+            output_sequences.append(sequence)
+
+    return output_sequences
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,

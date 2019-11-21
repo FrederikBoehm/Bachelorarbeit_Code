@@ -15,8 +15,8 @@ def createPretrainingData():
     FLAGS = flags.FLAGS
     FLAGS.vocab_file = "./data/BERT/uncased_L-12_H-768_A-12/vocab.txt"
     FLAGS.do_lower_case = True
-    FLAGS.max_seq_length = 128
-    FLAGS.max_predictions_per_seq = 20
+    FLAGS.max_seq_length = 512
+    FLAGS.max_predictions_per_seq = 77
     FLAGS.masked_lm_prob = 0.15
     FLAGS.random_seed = 12345
     FLAGS.dupe_factor = 5
@@ -27,8 +27,6 @@ def createPretrainingData():
     logging.set_verbosity(logging.INFO)
     max_seq_length = FLAGS.max_seq_length
 
-    # all_files = glob.glob(FLAGS["input_file"])
-    # random.shuffle(all_files)
     # Split array in similar sized arrays an spawn new process for each of them
 
     df_train = pd.read_csv('./data/multiline_report_index_train.csv', sep='\t')
@@ -36,25 +34,25 @@ def createPretrainingData():
     train_output_dir = f"./data/bert_pretraining_data/seq_{max_seq_length}/train"
     if not os.path.exists(train_output_dir):
         os.makedirs(train_output_dir)
-    _createData(train_files, output_dir = train_output_dir)
+    _splitDataAndSpawnProcesses(train_files, output_dir = train_output_dir)
 
     df_validate = pd.read_csv('./data/multiline_report_index_validate.csv', sep='\t')
     validate_files = df_validate['File_Path']
     validate_output_dir = f"./data/bert_pretraining_data/seq_{max_seq_length}/validate"
     if not os.path.exists(validate_output_dir):
         os.makedirs(validate_output_dir)
-    _createData(validate_files, output_dir = validate_output_dir)
+    _splitDataAndSpawnProcesses(validate_files, output_dir = validate_output_dir)
 
     df_test = pd.read_csv('./data/multiline_report_index_test.csv', sep='\t')
     test_files = df_test['File_Path']
     test_output_dir = f"./data/bert_pretraining_data/seq_{max_seq_length}/test"
     if not os.path.exists(test_output_dir):
         os.makedirs(test_output_dir)
-    _createData(test_files, output_dir = test_output_dir)
+    _splitDataAndSpawnProcesses(test_files, output_dir = test_output_dir)
 
     print('Computation completed.')
 
-def _createData(input_files, output_dir):
+def _splitDataAndSpawnProcesses(input_files, output_dir):
     cpu_cores = cpu_count()
     processes = []
     print(f'Detected {cpu_cores} cores, splitting dataset...')

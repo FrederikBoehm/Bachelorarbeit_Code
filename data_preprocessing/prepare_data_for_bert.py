@@ -7,11 +7,12 @@ import json
 import sys
 import logging
 import subprocess
-from create_pretraining_data import createPretrainingData
 from multiprocessing import Process, current_process, cpu_count, Queue
 import time
 
 def prepareDataForBert():
+    start_time = time.time()
+
     print('Loading file summaries...')
     df_file_summaries = pd.read_csv('./data/Edgar/LM_10X_Summaries_2018.csv')
     df_historic_composition = pd.read_csv('./data/S_and_P_historical.csv')
@@ -22,7 +23,7 @@ def prepareDataForBert():
     df_cik_ticker_mapping = pd.read_csv('./data/cik_ticker_modified.csv', delimiter='|')
 
     checkpoint = {}
-    checkpoint_file = open('./data-preparation.checkpoint.json', 'r') 
+    checkpoint_file = open('./data-preparation-test.checkpoint.json', 'r') 
     checkpoint = json.load(checkpoint_file)
     checkpoint_file.close()
 
@@ -30,7 +31,7 @@ def prepareDataForBert():
     init_index = checkpoint["index"] if checkpoint["index"] else 0
 
     if init_index == 0:
-        multiline_report_index = open('./data/multiline_report_index.csv', 'w')
+        multiline_report_index = open('./data/multiline_report_index2.csv', 'w')
         multiline_report_index.write('CIK\tTicker\tCompany\tFiling_Date\tForm_Type\tFile_Path\n')
         multiline_report_index.close()
 
@@ -43,15 +44,15 @@ def prepareDataForBert():
             start_indexes.append(start_index)
 
     print(start_indexes)
-    if not os.path.exists('./data/multiline_reports'):
-        os.makedirs('./data/multiline_reports')
+    if not os.path.exists('./data/multiline_reports2'):
+        os.makedirs('./data/multiline_reports2')
 
     queue = Queue()
         
     document_parsing_processes = []
     for start_index in start_indexes:
         
-        process = Process(target=_handleDocumentParsing, args=(df_file_summaries,
+        process = Process(target=_handleDocumentParsing, args=(df_file_summaries[:10000],
                                                                df_cik_ticker_mapping,
                                                                df_historic_composition,
                                                                start_index,
@@ -71,15 +72,17 @@ def prepareDataForBert():
     index_building_process.join()
 
     print('Finished work.')
+    end_time = time.time()
+
+    duration = end_time - start_time
+    print(f"Duration: {duration}")
 
 
 def _handleDocumentParsing(df_file_summaries, df_cik_ticker_mapping, df_historic_composition, init_index, historic_composition_date, spawned_processes, output_queue):
     process_id = os.getpid()
     historic_composition_at_date = df_historic_composition[df_historic_composition['Date'] == historic_composition_date].values
 
-    # for index, cik in enumerate(df_file_summaries['CIK'][init_index::spawned_processes], start=init_index):
     for index, cik in _enumerate(df_file_summaries['CIK'], start=init_index, step=spawned_processes):
-        # if historic_composition_at_date.contains(cik):
         if cik in historic_composition_at_date:
             print('Progressing for CIK ' + str(cik))
             report_file_path = df_file_summaries['FILE_NAME'].iloc[index]
@@ -100,7 +103,7 @@ def _handleDocumentParsing(df_file_summaries, df_cik_ticker_mapping, df_historic
             seperator = '\n'
             multiline_report = seperator.join(sentences)
 
-            output_file_path = './data/multiline_reports/multiline_report' + str(index)
+            output_file_path = './data/multiline_reports2/multiline_report' + str(index)
             output_file = open(output_file_path, 'w+')
             output_file.write(multiline_report)
             output_file.close()
@@ -142,8 +145,6 @@ def _enumerate(iterable, start=0, step=1):
         yield (index, iterable_list[index])
         index = index + step
 
-
-
 def _buildIndexFile(input_queue, spawned_processes):
     finished_processes = []
 
@@ -171,7 +172,7 @@ def _buildIndexFile(input_queue, spawned_processes):
             output_file_path = process_output['output_file_path']
             
             print(f'Adding entry with CIK {cik}, Ticker {ticker}, Company {company}, Filing Date {filing_date}, Form Type {form_type} Output File Path {output_file_path} .')
-            multiline_report_index = open('./data/multiline_report_index.csv', 'a')
+            multiline_report_index = open('./data/multiline_report_index2.csv', 'a')
             multiline_report_index.write(f'{cik}\t{ticker}\t{company}\t{filing_date}\t{form_type}\t{output_file_path}\n')
             multiline_report_index.close()
 
@@ -181,7 +182,7 @@ def _buildIndexFile(input_queue, spawned_processes):
             historic_composition_date = last_output['historic_composition_date']
             if (previous_index < index):
                 print(f'Updating checkpoint. Index: {index}, Historic Composition date: {historic_composition_date}')
-                checkpoint_file = open('./data-preparation.checkpoint.json', 'w', encoding='utf-8')
+                checkpoint_file = open('./data-preparation-test.checkpoint.json', 'w', encoding='utf-8')
                 checkpoint = {
                     "historic_composition_date": int(historic_composition_date),
                     "index": index
@@ -253,15 +254,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
-    if len(sys.argv) < 2:
-        logging.log(level = logging.ERROR, msg='No parameter specified')
-    else:
-        parameter = sys.argv[1]
-        if parameter == 'prepare-data-for-bert':
-            logging.log(level = logging.INFO, msg='Starting prepareDataForBert()')
-            prepareDataForBert()
-        elif parameter == 'create-pretraining-data':
-            logging.log(level = logging.INFO, msg='Starting createPretrainingData()')
-            createPretrainingData()
-        else:
-            logging.log(level = logging.ERROR, msg=f'No script for {parameter}')
+    prepareDataForBert()

@@ -14,19 +14,16 @@ from multiprocessing import Process, current_process, cpu_count, Queue
 def evaluatePretraining():
     FLAGS = flags.FLAGS
 
-    input_file = "./data/bert_pretraining_data/seq_128/validate/tf_examples.tfrecord*"
+    input_file = "./data/bert_pretraining_data/seq_512/validate/tf_examples.tfrecord*"
     FLAGS.output_dir = "./data"
-    # FLAGS.do_train = True
-    # FLAGS.do_eval = True
     FLAGS.bert_config_file = './data/BERT/uncased_L-12_H-768_A-12/bert_config.json'
-    # FLAGS.init_checkpoint = './data/BERT/uncased_L-12_H-768_A-12/bert_model.ckpt'
-    FLAGS.train_batch_size = 32
-    FLAGS.max_seq_length = 128
-    FLAGS.max_predictions_per_seq = 20
-    FLAGS.num_train_steps = 185000 # We take that number to iterate over the created checkpoints
+    FLAGS.train_batch_size = 6
+    FLAGS.max_seq_length = 512
+    FLAGS.max_predictions_per_seq = 77
+    FLAGS.num_train_steps = 18500 # We take that number to iterate over the created checkpoints
     FLAGS.num_warmup_steps = 92500
     FLAGS.learning_rate = 2e-5
-    FLAGS.eval_batch_size = 32
+    FLAGS.eval_batch_size = 6
     FLAGS.save_checkpoints_steps = 18500
     FLAGS.iterations_per_loop = 1000
     FLAGS.max_eval_steps = 30560
@@ -37,18 +34,11 @@ def evaluatePretraining():
     FLAGS.master = None
     FLAGS.num_tpu_cores = None
 
-    # index_file = './data/multiline_report_index_train.csv'
-
     FLAGS.mark_as_parsed()
     
     logging.set_verbosity(logging.INFO)
 
-    # init_checkpoint = './data/BERT/uncased_L-12_H-768_A-12/bert_model.ckpt'
-
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-
-    # if not FLAGS.do_train and not FLAGS.do_eval:
-    #     raise ValueError("At least one of `do_train` or `do_eval` must be True.")
 
     bert_config = BertConfig.from_json_file(FLAGS.bert_config_file)
 
@@ -147,12 +137,6 @@ def _evaluateModel(checkpoint, bert_config, run_config, input_files):
     result = estimator.evaluate(
         input_fn=eval_input_fn, steps=FLAGS.max_eval_steps)
 
-    # output_eval_file = os.path.join(FLAGS.output_dir, "eval_results.txt")
-    # with tf.io.gfile.GFile(output_eval_file, "w") as writer:
-    #     logging.info("***** Eval results *****")
-    # for key in sorted(result.keys()):
-    #     logging.info("  %s = %s", key, str(result[key]))
-    #     writer.write("%s = %s\n" % (key, str(result[key])))
     return result
 
 

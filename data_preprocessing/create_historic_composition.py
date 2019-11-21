@@ -15,12 +15,10 @@ def createHistoricSandPComposition():
         
         if ((label != 'Ticker') and (label != 'ISIN Code') and (label != 'Company Name')):
             counter = 0
-            #historical_component_list.append(label)
             components_at_date = set()
             for index, line_content in enumerate(column):
                 if line_content == 'X':
                     ticker = df_composition['Ticker'][index]
-                    #cik = df_cik_ticker.loc[df_cik_ticker['Ticker'] == ticker, 'CIK'].values[0]
                     ticker = re.sub(r'\s\(\S*\)', '', ticker)
                     cik = ''
                     for index2, line_content2 in enumerate(df_cik_ticker['Ticker']):

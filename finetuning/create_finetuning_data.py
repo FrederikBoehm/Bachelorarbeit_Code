@@ -4,12 +4,18 @@ import os
 from bert.tokenization import FullTokenizer, convert_to_unicode
 from bert.run_classifier import file_based_convert_examples_to_features, DataProcessor, InputExample
 from multiprocessing import Process, current_process, cpu_count
+from report_processor import ReportProcessor
+try:
+    from concat_to_max_sequence_length import concatToMaxSequenceLength
+except ImportError:
+    from shared.concat_to_max_sequence_length import concatToMaxSequenceLength
 
 def createFinetuningData():
+    max_seq_length = 512
     
-    _createBalancedData('./data/multiline_report_index_train.csv', './data/fine_tuning_data_train.csv')
-    _createBalancedData('./data/multiline_report_index_validate.csv', './data/fine_tuning_data_validate.csv')
-    _createBalancedData('./data/multiline_report_index_test.csv', './data/fine_tuning_data_test.csv')
+    _createBalancedData('./data/multiline_report_index_train.csv', './data/fine_tuning_data_train.csv', max_seq_length)
+    _createBalancedData('./data/multiline_report_index_validate.csv', './data/fine_tuning_data_validate.csv', max_seq_length)
+    _createBalancedData('./data/multiline_report_index_test.csv', './data/fine_tuning_data_test.csv', max_seq_length)
 
     processor = ReportProcessor()
 
@@ -30,11 +36,11 @@ def createFinetuningData():
 
     vocab_file = './data/BERT/uncased_L-12_H-768_A-12/vocab.txt'
 
-    train_process = Process(target=_convertToTfrecord, args=(train_examples, vocab_file, './data/bert_finetuning_data/train', 'train.tf_record'))
+    train_process = Process(target=_convertToTfrecord, args=(train_examples, vocab_file, './data/bert_finetuning_data/train', 'train.tf_record', max_seq_length))
     train_process.start()
-    validate_process = Process(target=_convertToTfrecord, args=(validate_examples, vocab_file, './data/bert_finetuning_data/validate', 'validate.tf_record'))
+    validate_process = Process(target=_convertToTfrecord, args=(validate_examples, vocab_file, './data/bert_finetuning_data/validate', 'validate.tf_record', max_seq_length))
     validate_process.start()
-    test_process = Process(target=_convertToTfrecord, args=(test_examples, vocab_file, './data/bert_finetuning_data/test', 'test.tf_record'))
+    test_process = Process(target=_convertToTfrecord, args=(test_examples, vocab_file, './data/bert_finetuning_data/test', 'test.tf_record', max_seq_length))
     test_process.start()
 
     train_process.join()
@@ -42,8 +48,7 @@ def createFinetuningData():
     test_process.join()
 
 
-def _convertToTfrecord(examples, vocab_file, output_dir, output_file):
-    max_seq_length = 128
+def _convertToTfrecord(examples, vocab_file, output_dir, output_file, max_seq_length):
     processor = ReportProcessor()
     label_list = processor.get_labels()
     tokenizer = FullTokenizer(vocab_file=vocab_file, do_lower_case=True)
@@ -60,7 +65,7 @@ def _convertToTfrecord(examples, vocab_file, output_dir, output_file):
 
 
 
-def _createBalancedData(index_file, output_file_path):
+def _createBalancedData(index_file, output_file_path, max_seq_length):
 
     reports_index_df = pd.read_csv(index_file, sep='\t')
     reports_index = reports_index_df.to_dict('records')
@@ -75,6 +80,8 @@ def _createBalancedData(index_file, output_file_path):
 
         with open(file_path) as f:
             lines = [line.rstrip('\n') for line in f]
+
+        lines = concatToMaxSequenceLength(lines, max_seq_length)
 
         if price_change == 'positive':
             pos_sequences.extend(lines)
@@ -117,42 +124,6 @@ def _createBalancedData(index_file, output_file_path):
     labeled_sequences_df = pd.DataFrame(labeled_sequences)
     labeled_sequences_df.to_csv(output_file_path, sep='\t', index=False)
 
-
-
-class ReportProcessor(DataProcessor):
-
-  def get_train_examples(self, data_dir):
-    """See base class."""
-    return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "fine_tuning_data_train.csv")), "train")
-
-  def get_validate_examples(self, data_dir):
-    """See base class."""
-    return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "fine_tuning_data_validate.csv")), "validate")
-
-  def get_test_examples(self, data_dir):
-    """See base class."""
-    return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "fine_tuning_data_test.csv")), "test")
-
-  def get_labels(self):
-    """See base class."""
-    return ["0", "1"]
-
-  def _create_examples(self, lines, set_type):
-    """Creates examples for the training and dev sets."""
-    examples = []
-    for (i, line) in enumerate(lines):
-        if i == 0:
-            continue
-        guid = "%s-%s" % (set_type, i)
-        
-        text_a = convert_to_unicode(line[1])
-        label = convert_to_unicode(line[0])
-        examples.append(
-            InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
-    return examples
 
 if __name__ == '__main__':
     createFinetuningData()

@@ -38,7 +38,6 @@ def loadHistoricStockPrices():
 
             response = requests.get(api_endpoint, params=params)
             print(f'Sent request to: {response.request.url}')
-            # print(response.json().keys())
             if 'Note' in response.json():
                 print(f'Note: {response.json()["Note"]}')
 

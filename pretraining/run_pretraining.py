@@ -11,19 +11,19 @@ def runPretraining():
     start_time = time.time()
     _initializeBert()
 
-    input_file = "./data/bert_pretraining_data/seq_128/train/tf_examples.tfrecord*"
+    input_file = "./data/bert_pretraining_data/seq_512/train/tf_examples.tfrecord*"
     output_dir = "./data/bert_pretraining_checkpoints"
     do_train = True
     do_eval = True
     bert_config_file = './data/BERT/uncased_L-12_H-768_A-12/bert_config.json'
-    init_checkpoint = './data/BERT/uncased_L-12_H-768_A-12/bert_model.ckpt'
-    train_batch_size = 32
-    max_seq_length = 128
-    max_predictions_per_seq = 20
-    num_train_steps = 185000
-    num_warmup_steps = 18500
+    init_checkpoint = './data/pretraining_short_warmup/model.ckpt-185000'
+    train_batch_size = 6
+    max_seq_length = 512
+    max_predictions_per_seq = 77
+    num_train_steps = 18500 # 185000 in total, 166500 for 128, 18500 for 512
+    num_warmup_steps = 1850
     learning_rate = 2e-5
-    eval_batch_size = 32
+    eval_batch_size = 6
     save_checkpoints_steps = 18500
     max_eval_steps = 1000
     iterations_per_loop = 1000

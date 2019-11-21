@@ -1,6 +1,6 @@
 {
     "ignorepaths": [
-        "./.git",
-        "./data"
+        "./.git/",
+        "./data/"
     ]
 }

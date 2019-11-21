@@ -65,9 +65,9 @@ class BasicHandler(FileSystemEventHandler):
             logging.log(level = logging.INFO, msg=output)
 
     def _get_Path(self, event_path):
-        event_path = event_path.replace('\\', '/')
-        event_path = event_path[1:]
-        path = self.workspace_dir + event_path
+        splitted_path = event_path.split('\\')
+        file_name = splitted_path[len(splitted_path) - 1]
+        path = self.workspace_dir + '/' + file_name
         return path
 
 if __name__ == "__main__":

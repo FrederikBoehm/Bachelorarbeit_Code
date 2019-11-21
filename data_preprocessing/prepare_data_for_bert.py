@@ -52,7 +52,7 @@ def prepareDataForBert():
     document_parsing_processes = []
     for start_index in start_indexes:
         
-        process = Process(target=_handleDocumentParsing, args=(df_file_summaries[:10000],
+        process = Process(target=_handleDocumentParsing, args=(df_file_summaries,
                                                                df_cik_ticker_mapping,
                                                                df_historic_composition,
                                                                start_index,

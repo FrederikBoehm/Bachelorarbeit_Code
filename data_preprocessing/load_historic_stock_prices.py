@@ -24,7 +24,7 @@ def loadHistoricStockPrices():
 
     ticker_symbols = df_multiline_report_index["Ticker"].unique()
 
-    for ticker_symbol in ticker_symbols[390:]:
+    for ticker_symbol in ticker_symbols:
         if not ticker_symbol in already_loaded:
             print(f"Requesting historic stock prices for {ticker_symbol} at {api_endpoint}.")
 

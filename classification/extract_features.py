@@ -96,12 +96,9 @@ def _processSplittedDataset(splitted_index_df, cuda_target, output_queue):
     change_ratio_column = list(splitted_index_df['Change_Ratio'])
     change_nominal_column = list(splitted_index_df['Change_Nominal'])
 
-    FLAGS = {}
-    FLAGS["bert_config_file"] = './data/BERT/uncased_L-12_H-768_A-12/bert_config.json'
-    FLAGS["vocab_file"] = './data/BERT/uncased_L-12_H-768_A-12/vocab.txt'
-    FLAGS["do_lower_case"] = True
-    FLAGS["master"] = None
-    FLAGS["num_tpu_cores"] = 8
+    bert_config_file = './data/BERT/uncased_L-12_H-768_A-12/bert_config.json'
+    vocab_file = './data/BERT/uncased_L-12_H-768_A-12/vocab.txt'
+    do_lower_case = True
 
     os.environ['CUDA_VISIBLE_DEVICES'] = f'{cuda_target}'
 
@@ -110,16 +107,16 @@ def _processSplittedDataset(splitted_index_df, cuda_target, output_queue):
 
     layer_indexes = [-1] # We are only interested in the last layer to obtain our embedding
 
-    bert_config = BertConfig.from_json_file(FLAGS["bert_config_file"])
+    bert_config = BertConfig.from_json_file(bert_config_file)
 
     tokenizer = FullTokenizer(
-        vocab_file=FLAGS["vocab_file"], do_lower_case=FLAGS["do_lower_case"])
+        vocab_file=vocab_file, do_lower_case=do_lower_case)
 
     is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
     run_config = tf.contrib.tpu.RunConfig(
-        master=FLAGS["master"],
+        master=None,
         tpu_config=tf.contrib.tpu.TPUConfig(
-            num_shards=FLAGS["num_tpu_cores"],
+            num_shards=8,
             per_host_input_for_training=is_per_host))
 
     for index, file_path in enumerate(multiline_report_paths):
@@ -152,18 +149,15 @@ def _processSplittedDataset(splitted_index_df, cuda_target, output_queue):
 
 
 def _getFeaturesForFile(input_file, layer_indexes, bert_config, tokenizer, run_config):
-    FLAGS = {}
-    # FLAGS["input_file"] = './data/multiline_reports/multiline_report*'
-    FLAGS["max_seq_length"] = 512
-    FLAGS["init_checkpoint"] = './data/finetuning_512_4/model.ckpt-403308'
-    FLAGS["batch_size"] = 6
-    FLAGS["use_tpu"] = False
-    FLAGS["use_one_hot_embeddings"] = False
+    max_seq_length = 512
+    init_checkpoint = './data/finetuning_512_4/model.ckpt-403308'
+    batch_size = 6
+
 
     examples = read_examples(input_file)
 
     features = convert_examples_to_features(
-        examples=examples, seq_length=FLAGS["max_seq_length"], tokenizer=tokenizer)
+        examples=examples, seq_length=max_seq_length, tokenizer=tokenizer)
 
     unique_id_to_feature = {}
     for feature in features:
@@ -171,21 +165,21 @@ def _getFeaturesForFile(input_file, layer_indexes, bert_config, tokenizer, run_c
 
     model_fn = model_fn_builder(
         bert_config=bert_config,
-        init_checkpoint=FLAGS["init_checkpoint"],
+        init_checkpoint=init_checkpoint,
         layer_indexes=layer_indexes,
-        use_tpu=FLAGS["use_tpu"],
-        use_one_hot_embeddings=FLAGS["use_one_hot_embeddings"])
+        use_tpu=False,
+        use_one_hot_embeddings=False)
 
     # If TPU is not available, this will fall back to normal Estimator on CPU
     # or GPU.
     estimator = tf.contrib.tpu.TPUEstimator(
-        use_tpu=FLAGS["use_tpu"],
+        use_tpu=False,
         model_fn=model_fn,
         config=run_config,
-        predict_batch_size=FLAGS["batch_size"])
+        predict_batch_size=batch_size)
 
     input_fn = input_fn_builder(
-        features=features, seq_length=FLAGS["max_seq_length"])
+        features=features, seq_length=max_seq_length)
 
     vectorized_text_segments = []
     for result in estimator.predict(input_fn, yield_single_examples=True):

@@ -7,6 +7,10 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+import os
+
 def optimizeNaiveBayes():
     df_train = pd.read_csv('./data/report_features_train.csv', sep='\t')
     df_test = pd.read_csv('./data/report_features_test.csv', sep='\t')
@@ -21,7 +25,7 @@ def optimizeNaiveBayes():
     ])
 
     print('Running grid search for Naive Bayes')
-    clf = GridSearchCV(pipeline, cv=5, n_jobs=-8, param_grid={})
+    clf = GridSearchCV(pipeline, cv=5, n_jobs=-8, verbose=5, param_grid={})
     clf.fit(X_train, y_train)
 
     print('-----------RESULTS Naive Bayes-----------')
@@ -43,7 +47,7 @@ def optimizeKNN():
     ])
 
     print('Running grid search for KNN')
-    clf = GridSearchCV(pipeline, cv=5, n_jobs=-8, param_grid={
+    clf = GridSearchCV(pipeline, cv=5, n_jobs=-8, verbose=5, param_grid={
         'knn__n_neighbors': [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271]
     })
     clf.fit(X_train, y_train)
@@ -71,16 +75,10 @@ def optimizeSVM():
     ])
 
     print('Running grid search for SVM')
-    clf = GridSearchCV(pipeline, cv=5, n_jobs=-8, param_grid=[
+    clf = GridSearchCV(pipeline, cv=5, n_jobs=-8, verbose=5, param_grid=[
         {
             'svm__kernel': ['linear'],
             'svm__C': [0.001, 0.01, 0.1, 1, 10, 100, 1000]
-        },
-        {
-            'svm__kernel': ['poly'],
-            'svm__C': [0.001, 0.01, 0.1, 1, 10, 100, 1000],
-            'svm__degree': [2, 3],
-            'svm__coef0': [0, 1]
         },
         {
             'svm__kernel': ['rbf'],
@@ -100,4 +98,4 @@ def optimizeSVM():
 if __name__ == "__main__":
     # optimizeNaiveBayes()
     # optimizeKNN()
-    optimizeSVM()
+    # optimizeSVM()

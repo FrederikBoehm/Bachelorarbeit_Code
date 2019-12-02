@@ -13,6 +13,9 @@ import pandas as pd
 
 def evaluateFinetuning():
 
+    FLAGS = flags.FLAGS
+    FLAGS.mark_as_parsed()
+
     bert_config_file = './data/BERT/uncased_L-12_H-768_A-12/bert_config.json'
     # vocab_file = './data/BERT/uncased_L-12_H-768_A-12/vocab.txt'
     output_dir = './data'
@@ -26,9 +29,9 @@ def evaluateFinetuning():
     iterations_per_loop = 1000
 
     number_of_train_examples = 672176
-    number_of_validate_examples = 228060
+    number_of_validate_examples = 231762
 
-    eval_file = "./data/bert_finetuning_data/validate/validate.tf_record"
+    eval_file = "./data/bert_finetuning_data/test/test.tf_record"
 
     num_train_steps = int(
             number_of_train_examples / train_batch_size * num_train_epochs)
@@ -47,13 +50,13 @@ def evaluateFinetuning():
     is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
     run_config = tf.contrib.tpu.RunConfig(
         cluster=tpu_cluster_resolver,
-        master=FLAGS.master,
+        master=None,
         model_dir=output_dir,
         save_checkpoints_steps=save_checkpoints_steps,
         keep_checkpoint_max=30,
         tpu_config=tf.contrib.tpu.TPUConfig(
             iterations_per_loop=iterations_per_loop,
-            num_shards=FLAGS.num_tpu_cores,
+            num_shards=None,
             per_host_input_for_training=is_per_host))
 
 

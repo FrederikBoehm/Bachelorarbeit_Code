@@ -63,6 +63,15 @@ def createHistoricSandPComposition():
     print("Writing dataframe to file...")
     print(dataframe.head())
     dataframe.to_csv('./data/S_and_P_historical.csv')
+
+    tickers_unavailable_file = open("./data/unavailable_tickers.txt", "w+")
+    tickers_unavailable_file.write("")
+    tickers_unavailable_file.close()
+    for ticker in list(unavailable_tickers):
+        tickers_unavailable_file = open("./data/unavailable_tickers.txt", "a")
+        tickers_unavailable_file.write(ticker + "\n")
+        tickers_unavailable_file.close()
+
     print("Finished.")
 
 if __name__ == "__main__":

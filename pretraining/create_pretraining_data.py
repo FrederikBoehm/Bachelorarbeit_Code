@@ -15,8 +15,8 @@ def createPretrainingData():
     FLAGS = flags.FLAGS
     FLAGS.vocab_file = "./data/BERT/uncased_L-12_H-768_A-12/vocab.txt"
     FLAGS.do_lower_case = True
-    FLAGS.max_seq_length = 512
-    FLAGS.max_predictions_per_seq = 77
+    FLAGS.max_seq_length = 128
+    FLAGS.max_predictions_per_seq = 20
     FLAGS.masked_lm_prob = 0.15
     FLAGS.random_seed = 12345
     FLAGS.dupe_factor = 5
@@ -43,12 +43,12 @@ def createPretrainingData():
         os.makedirs(validate_output_dir)
     _splitDataAndSpawnProcesses(validate_files, output_dir = validate_output_dir)
 
-    df_test = pd.read_csv('./data/multiline_report_index_test.csv', sep='\t')
-    test_files = df_test['File_Path']
-    test_output_dir = f"./data/bert_pretraining_data/seq_{max_seq_length}/test"
-    if not os.path.exists(test_output_dir):
-        os.makedirs(test_output_dir)
-    _splitDataAndSpawnProcesses(test_files, output_dir = test_output_dir)
+    # df_test = pd.read_csv('./data/multiline_report_index_test.csv', sep='\t')
+    # test_files = df_test['File_Path']
+    # test_output_dir = f"./data/bert_pretraining_data/seq_{max_seq_length}/test"
+    # if not os.path.exists(test_output_dir):
+    #     os.makedirs(test_output_dir)
+    # _splitDataAndSpawnProcesses(test_files, output_dir = test_output_dir)
 
     print('Computation completed.')
 

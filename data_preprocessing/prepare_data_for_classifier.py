@@ -6,7 +6,7 @@ def prepareDataForClassifier():
     train_size = 0.8
 
     print('Reading file...')
-    df_report_features = pd.read_csv('./data/report_features.csv', sep='\t')
+    df_report_features = pd.read_csv('./data/report_features_with_std.csv', sep='\t')
 
     report_features = df_report_features.to_dict('records')
 
@@ -21,8 +21,8 @@ def prepareDataForClassifier():
     df_train = pd.DataFrame(data=report_features_train)
     df_test = pd.DataFrame(data=report_features_test)
 
-    df_train.to_csv('./data/report_features_train.csv', sep='\t', index=False)
-    df_test.to_csv('./data/report_features_test.csv', sep='\t', index=False)
+    df_train.to_csv('./data/report_features_std_train.csv', sep='\t', index=False)
+    df_test.to_csv('./data/report_features_std_test.csv', sep='\t', index=False)
 
 
 def _balanceData(data, balance_key):

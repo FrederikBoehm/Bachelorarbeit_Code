@@ -18,13 +18,22 @@ def extractFeatures():
 
     start_time = time.time()
     print('Loading multiline_report_index_feature_extraction.csv')
-    df_index_file = pd.read_csv('./data/multiline_report_index_feature_extraction.csv', sep='\t')
+    df_index_file = pd.read_csv('data/multiline_report_index_feature_extraction.csv', sep='\t')
 
-    available_cuda_processors = [0, 1, 2, 3, 4, 5]
+    column_names_list = ['CIK', 'Ticker', 'Company', 'Filing_Date', 'Form_Type', 'Change_Ratio', 'Change_Nominal', 'File_Path']
+    feature_columns = list(range(768))
+    feature_columns = list(map(lambda column_index: f'F_{column_index}', feature_columns))
+    column_names_list.extend(feature_columns)
+    seperator = '\t'
+    column_names = seperator.join(column_names_list)
+    column_names = f'{column_names}\n'
 
-    output_directory = './data/multiline_report_features'
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
+    output_file_path = './data/report_features.csv'
+    report_features_file = open(output_file_path, 'w+')
+    report_features_file.write(column_names)
+    report_features_file.close()
+
+    available_cuda_processors = [0, 1, 2]
 
     queue = Queue()
     feature_extraction_processes = []
@@ -36,12 +45,11 @@ def extractFeatures():
 
         process = Process(target=_processSplittedDataset, args=(splitted_df,
                                                                 available_cuda_processors[index],
-                                                                output_directory,
                                                                 queue))
         process.start()
         feature_extraction_processes.append(process)
 
-    index_building_process = Process(target=_createOutputFile, args=(queue, len(feature_extraction_processes)))
+    index_building_process = Process(target=_createOutputFile, args=(queue, output_file_path, len(feature_extraction_processes)))
     index_building_process.daemon = True
     index_building_process.start()
 
@@ -59,10 +67,8 @@ def extractFeatures():
     print('Finished work.')
 
 
-def _createOutputFile(input_queue, spawned_processes):
+def _createOutputFile(input_queue, output_file_path, spawned_processes):
     finished_processes = 0
-
-    index_df = pd.DataFrame()
 
     while finished_processes < spawned_processes:
         while not input_queue.empty():
@@ -71,13 +77,14 @@ def _createOutputFile(input_queue, spawned_processes):
             if output_from_working_process == 'FINISHED':
                 finished_processes += 1
             else:
-                index_df = index_df.append(output_from_working_process, ignore_index=True)
-                index_df.to_csv('./data/multiline_report_features_index.csv', sep='\t', index=False)
+                report_features_file = open(output_file_path, 'a')
+                report_features_file.write(output_from_working_process)
+                report_features_file.close()
 
     print('Finished building feature file.')
     
 
-def _processSplittedDataset(splitted_index_df, cuda_target, output_directory, output_queue):
+def _processSplittedDataset(splitted_index_df, cuda_target, output_queue):
     process_id = os.getpid()
     multiline_report_paths = list(splitted_index_df['File_Path'])
 
@@ -113,36 +120,29 @@ def _processSplittedDataset(splitted_index_df, cuda_target, output_directory, ou
             per_host_input_for_training=is_per_host))
 
     for index, file_path in enumerate(multiline_report_paths):
-        try:
-            print(f'Getting feature vectors for {file_path}')
-            feature_vector = _getFeaturesForFile(file_path, layer_indexes, bert_config, tokenizer, run_config)
+        print(f'Getting feature vectors for {file_path}')
+        feature_vector = _getFeaturesForFile(file_path, layer_indexes, bert_config, tokenizer, run_config)
+        feature_vector = [str(i) for i in feature_vector]
 
-            feature_columns = list(range(768))
-            feature_columns = list(map(lambda column_index: f'F_{column_index}', feature_columns))
+        seperator = '\t'
+        features_as_string = seperator.join(feature_vector)
+        features_as_string = f'{features_as_string}'
 
-            output_df = pd.DataFrame(data=feature_vector, columns=feature_columns)
+        row_entries = [
+            str(cik_column[index]),
+            str(ticker_column[index]),
+            str(company_column[index]),
+            str(date_column[index]),
+            str(type_column[index]),
+            str(change_ratio_column[index]),
+            str(change_nominal_column[index]),
+            str(multiline_report_paths[index]),
+            features_as_string
+        ]
 
-            splitted_file_path = file_path.split('/')
-            output_file_path = f'{output_directory}/{splitted_file_path[len(splitted_file_path)-1]}.csv'
+        row = "\t".join(row_entries) + "\n"
 
-            output_df.to_csv(output_file_path, sep='\t', index=False)
-
-            row_entries = {
-                'CIK': str(cik_column[index]),
-                'Ticker': str(ticker_column[index]),
-                'Company': str(company_column[index]),
-                'Filing_Date': str(date_column[index]),
-                'Form_Type': str(type_column[index]),
-                'Change_Ratio': str(change_ratio_column[index]),
-                'Change_Nominal': str(change_nominal_column[index]),
-                'File_Path': output_file_path
-            }
-
-            output_queue.put(row_entries)
-        except Exception as e:
-            error_file = open('./data/extract_sequence_features_errors.txt', 'a+')
-            error_file.write(str(e) + "\n\n")
-            error_file.close()
+        output_queue.put(row)
 
     output_queue.put('FINISHED')
     print(f'Process {process_id} finished feature extraction.')
@@ -189,8 +189,11 @@ def _getFeaturesForFile(input_file, layer_indexes, bert_config, tokenizer, run_c
         ]
         vectorized_text_segments.append(feature_vec)
 
-    return vectorized_text_segments
+    vectorized_text_segments = np.array(vectorized_text_segments)
 
+    output = np.mean(vectorized_text_segments, axis = 0)
+
+    return output
 
 if __name__ == "__main__":
     extractFeatures()

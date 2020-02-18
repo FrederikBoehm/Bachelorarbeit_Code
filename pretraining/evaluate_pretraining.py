@@ -15,16 +15,16 @@ def evaluatePretraining():
     FLAGS = flags.FLAGS
     FLAGS.mark_as_parsed()
 
-    input_file = "./data/bert_pretraining_data/seq_512/validate/tf_examples.tfrecord*"
+    input_file = "./data/bert_pretraining_data/seq_128/validate/tf_examples.tfrecord*"
     output_dir = "./data"
     bert_config_file = './data/BERT/uncased_L-12_H-768_A-12/bert_config.json'
-    train_batch_size = 6
-    max_seq_length = 512
-    max_predictions_per_seq = 77
-    num_train_steps = 18500 # We take that number to iterate over the created checkpoints
-    num_warmup_steps = 92500
+    train_batch_size = 32
+    max_seq_length = 128
+    max_predictions_per_seq = 20
+    num_train_steps = 185000 # We take that number to iterate over the created checkpoints
+    num_warmup_steps = 18500
     learning_rate = 2e-5
-    eval_batch_size = 6
+    eval_batch_size = 32
     save_checkpoints_steps = 18500
     iterations_per_loop = 1000
     max_eval_steps = 30560
@@ -33,7 +33,7 @@ def evaluatePretraining():
     
     logging.set_verbosity(logging.INFO)
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
     bert_config = BertConfig.from_json_file(bert_config_file)
 
@@ -60,16 +60,17 @@ def evaluatePretraining():
 
     output_df = pd.DataFrame()
 
-    checkpoint_path = './data/BERT/uncased_L-12_H-768_A-12/bert_model.ckpt'
-    result = result = _evaluateModel(checkpoint_path, bert_config, run_config, input_files, max_seq_length, num_train_steps, num_warmup_steps, learning_rate, train_batch_size, eval_batch_size, max_eval_steps, max_predictions_per_seq)
-    result["epoch"] = 0
-    result["checkpoint"] = checkpoint_path
-    output_df = output_df.append(result, ignore_index=True)
-    logging.info("***Eval results***")
-    for key in sorted(result.keys()):
-        logging.info("  %s = %s", key, str(result[key]))
+    # checkpoint_path = './data/BERT/uncased_L-12_H-768_A-12/bert_model.ckpt'
+    # result = result = _evaluateModel(checkpoint_path, bert_config, run_config, input_files, max_seq_length, num_train_steps, num_warmup_steps, learning_rate, train_batch_size, eval_batch_size, max_eval_steps, max_predictions_per_seq)
+    # result["epoch"] = 0
+    # result["checkpoint"] = checkpoint_path
+    # output_df = output_df.append(result, ignore_index=True)
+    # logging.info("***Eval results***")
+    # for key in sorted(result.keys()):
+    #     logging.info("  %s = %s", key, str(result[key]))
 
-    pretrained_checkpoints = './data/bert_pretraining_checkpoints/model.ckpt-*'
+    checkpoints_path = './data/bert_pretraining_checkpoints_2'
+    pretrained_checkpoints = checkpoints_path + '/model.ckpt-*'
     pretrained_checkpoints_list = glob.glob(pretrained_checkpoints)
 
     for index in range(0, num_train_steps + 1):
@@ -86,16 +87,16 @@ def evaluatePretraining():
                     num_shards=None,
                     per_host_input_for_training=is_per_host))
 
-            checkpoint = f'./data/bert_pretraining_checkpoints/model.ckpt-{index}'
+            checkpoint = f'{checkpoints_path}/model.ckpt-{index}'
             result = _evaluateModel(checkpoint, bert_config, run_config, input_files, max_seq_length, num_train_steps, num_warmup_steps, learning_rate, train_batch_size, eval_batch_size, max_eval_steps, max_predictions_per_seq)
-            result["epoch"] = int((index)/num_train_steps)
             result["checkpoint"] = checkpoint
+            result["step"] = index
             output_df = output_df.append(result, ignore_index=True)
             logging.info("***Eval results***")
             for key in sorted(result.keys()):
                 logging.info("  %s = %s", key, str(result[key]))
 
-    output_df.to_csv('./data/pretraining_evaluation_validation_data.csv', index=False)
+    output_df.to_csv('./data/pretraining_evaluation_validation_data_modified_vocab_short_warmup.csv', index=False)
 
 
 def _evaluateModel(checkpoint, bert_config, run_config, input_files, max_seq_length, num_train_steps, num_warmup_steps, learning_rate, train_batch_size, eval_batch_size, max_eval_steps, max_predictions_per_seq):

@@ -21,19 +21,19 @@ def extractFeatures():
     df_index_file = pd.read_csv('data/multiline_report_index_feature_extraction.csv', sep='\t')
 
     column_names_list = ['CIK', 'Ticker', 'Company', 'Filing_Date', 'Form_Type', 'Change_Ratio', 'Change_Nominal', 'File_Path']
-    feature_columns = list(range(768))
+    feature_columns = list(range(1536)) # 768 for the mean values and 768 for the standard deviation
     feature_columns = list(map(lambda column_index: f'F_{column_index}', feature_columns))
     column_names_list.extend(feature_columns)
     seperator = '\t'
     column_names = seperator.join(column_names_list)
     column_names = f'{column_names}\n'
 
-    output_file_path = './data/report_features.csv'
+    output_file_path = './data/report_features_with_std.csv'
     report_features_file = open(output_file_path, 'w+')
     report_features_file.write(column_names)
     report_features_file.close()
 
-    available_cuda_processors = [0, 1, 2]
+    available_cuda_processors = [0, 1, 2, 3, 4, 5]
 
     queue = Queue()
     feature_extraction_processes = []
@@ -121,28 +121,34 @@ def _processSplittedDataset(splitted_index_df, cuda_target, output_queue):
 
     for index, file_path in enumerate(multiline_report_paths):
         print(f'Getting feature vectors for {file_path}')
-        feature_vector = _getFeaturesForFile(file_path, layer_indexes, bert_config, tokenizer, run_config)
-        feature_vector = [str(i) for i in feature_vector]
+        try: # At some point during feature extraction an error has to be thrown because one process stops, this led to a loss in data -> Write error to file and proceed with next report
+            feature_vector = _getFeaturesForFile(file_path, layer_indexes, bert_config, tokenizer, run_config)
+            feature_vector = [str(i) for i in feature_vector]
 
-        seperator = '\t'
-        features_as_string = seperator.join(feature_vector)
-        features_as_string = f'{features_as_string}'
+            seperator = '\t'
+            features_as_string = seperator.join(feature_vector)
+            features_as_string = f'{features_as_string}'
 
-        row_entries = [
-            str(cik_column[index]),
-            str(ticker_column[index]),
-            str(company_column[index]),
-            str(date_column[index]),
-            str(type_column[index]),
-            str(change_ratio_column[index]),
-            str(change_nominal_column[index]),
-            str(multiline_report_paths[index]),
-            features_as_string
-        ]
+            row_entries = [
+                str(cik_column[index]),
+                str(ticker_column[index]),
+                str(company_column[index]),
+                str(date_column[index]),
+                str(type_column[index]),
+                str(change_ratio_column[index]),
+                str(change_nominal_column[index]),
+                str(multiline_report_paths[index]),
+                features_as_string
+            ]
 
-        row = "\t".join(row_entries) + "\n"
+            row = "\t".join(row_entries) + "\n"
 
-        output_queue.put(row)
+            output_queue.put(row)
+        except Exception as e:
+            error_file = open('./data/extract_features_errors.txt', 'a+')
+            error_file.write(str(e) + "\n\n")
+            error_file.close()
+
 
     output_queue.put('FINISHED')
     print(f'Process {process_id} finished feature extraction.')
@@ -185,13 +191,16 @@ def _getFeaturesForFile(input_file, layer_indexes, bert_config, tokenizer, run_c
     for result in estimator.predict(input_fn, yield_single_examples=True):
         layer_output = result["layer_output_0"]
         feature_vec = [
-            round(float(x), 6) for x in layer_output[0:(0 + 1)].flat
+            round(float(x), 6) for x in layer_output[0].flat
         ]
         vectorized_text_segments.append(feature_vec)
 
     vectorized_text_segments = np.array(vectorized_text_segments)
 
-    output = np.mean(vectorized_text_segments, axis = 0)
+    features_mean = np.mean(vectorized_text_segments, axis = 0)
+    features_std = np.std(vectorized_text_segments, axis=0)
+
+    output = np.concatenate((features_mean, features_std), axis=0)
 
     return output
 

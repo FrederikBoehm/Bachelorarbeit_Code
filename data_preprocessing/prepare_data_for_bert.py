@@ -31,7 +31,7 @@ def prepareDataForBert():
     init_index = checkpoint["index"] if checkpoint["index"] else 0
 
     if init_index == 0:
-        multiline_report_index = open('./data/multiline_report_index2.csv', 'w')
+        multiline_report_index = open('./data/multiline_report_index.csv', 'w')
         multiline_report_index.write('CIK\tTicker\tCompany\tFiling_Date\tForm_Type\tFile_Path\n')
         multiline_report_index.close()
 
@@ -44,8 +44,8 @@ def prepareDataForBert():
             start_indexes.append(start_index)
 
     print(start_indexes)
-    if not os.path.exists('./data/multiline_reports2'):
-        os.makedirs('./data/multiline_reports2')
+    if not os.path.exists('./data/multiline_reports'):
+        os.makedirs('./data/multiline_reports')
 
     queue = Queue()
         
@@ -103,7 +103,7 @@ def _handleDocumentParsing(df_file_summaries, df_cik_ticker_mapping, df_historic
             seperator = '\n'
             multiline_report = seperator.join(sentences)
 
-            output_file_path = './data/multiline_reports2/multiline_report' + str(index)
+            output_file_path = './data/multiline_reports/multiline_report' + str(index)
             output_file = open(output_file_path, 'w+')
             output_file.write(multiline_report)
             output_file.close()
@@ -172,7 +172,7 @@ def _buildIndexFile(input_queue, spawned_processes):
             output_file_path = process_output['output_file_path']
             
             print(f'Adding entry with CIK {cik}, Ticker {ticker}, Company {company}, Filing Date {filing_date}, Form Type {form_type} Output File Path {output_file_path} .')
-            multiline_report_index = open('./data/multiline_report_index2.csv', 'a')
+            multiline_report_index = open('./data/multiline_report_index.csv', 'a')
             multiline_report_index.write(f'{cik}\t{ticker}\t{company}\t{filing_date}\t{form_type}\t{output_file_path}\n')
             multiline_report_index.close()
 

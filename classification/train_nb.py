@@ -5,7 +5,8 @@ import pickle
 import numpy as np
 import argparse
 
-# Train model on full training set after best hyperparameters were selected with validation curve -> Create final test accuracy
+# Train model on full training set after
+# The evaluation is afterwards done with evaluate_final_model.py
 
 def trainNB(train_on_average_features):
     print('Reading training data')

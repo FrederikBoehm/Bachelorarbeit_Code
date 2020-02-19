@@ -1,6 +1,9 @@
 import pandas as pd
 import re
 
+
+# Because the composition of the S&P 500 changed over time, this function recreates the composition over time
+
 def createHistoricSandPComposition():
     print("Starting composition...")
 

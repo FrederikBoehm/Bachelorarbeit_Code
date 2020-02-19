@@ -5,13 +5,15 @@ from bert.tokenization import FullTokenizer, convert_to_unicode
 from bert.run_classifier import file_based_convert_examples_to_features, DataProcessor, InputExample
 from multiprocessing import Process, current_process, cpu_count
 from report_processor import ReportProcessor
+import argparse
 try:
     from concat_to_max_sequence_length import concatToMaxSequenceLength
 except ImportError:
     from shared.concat_to_max_sequence_length import concatToMaxSequenceLength
 
-def createFinetuningData():
-    max_seq_length = 512
+# Creates the TFRecord files, which are required to fine-tune BERT
+
+def createFinetuningData(max_seq_length):
     
     _createBalancedData('./data/multiline_report_index_train.csv', './data/fine_tuning_data_train.csv', max_seq_length)
     _createBalancedData('./data/multiline_report_index_validate.csv', './data/fine_tuning_data_validate.csv', max_seq_length)
@@ -126,4 +128,11 @@ def _createBalancedData(index_file, output_file_path, max_seq_length):
 
 
 if __name__ == '__main__':
-    createFinetuningData()
+    parser = argparse.ArgumentParser(description='Parameters to createFinetuningData.')
+    parser.add_argument('--max_sequence_length', dest='max_sequence_length', type=int)
+    args = parser.parse_args()
+    max_sequence_length = args.max_sequence_length
+    if max_sequence_length:
+        createFinetuningData(max_sequence_length)
+    else:
+        print('Provide a value for max_sequence_length, e.g. 128 or 512')

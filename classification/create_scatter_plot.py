@@ -8,6 +8,8 @@ import numpy as np
 import argparse
 
 
+# Creates a scatter plot for either the sequence embeddings or the document embeddings
+# For both a PCA is applied first
 
 def createSequenceScatterPlot(algorithm):
     df_index = pd.read_csv('./data/multiline_report_features_index.csv', sep="\t")
@@ -40,7 +42,6 @@ def createSequenceScatterPlot(algorithm):
         _, y_int = np.unique(y, return_inverse=True)
         l.fit(X, y_int)
         X_transformed = l.transform(X)
-
 
 
     matplotlib.rcParams.update({'font.size': 16})   
@@ -80,7 +81,6 @@ def createDocumentScatterPlot(algorithm):
         _, y_int = np.unique(y, return_inverse=True)
         l.fit(X, y)
         X_transformed = l.transform(X)
-
 
 
     matplotlib.rcParams.update({'font.size': 16})   

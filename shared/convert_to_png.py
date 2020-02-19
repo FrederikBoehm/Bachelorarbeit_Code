@@ -6,26 +6,10 @@ import numpy as np
 import pandas as pd
 import argparse
 
-# def convertToPng(data_files, x_column, y_column, graph_labels, x_label, y_label, output_file):
-#     data_frames = []
-#     for data_file in data_files:
-#         data_frames.append(pd.read_csv(data_file))
+# Converts data points provided as CSV to a line plot
+# Used for learning and validation curves
 
-#     plt.style.use('seaborn-whitegrid')
-#     fig = plt.figure()
-#     ax = plt.axes()
-#     ax.axvline(x=185000, ymin=0, ymax=1, color='#808080')
-#     for index, data_frame in enumerate(data_frames):
-#         plt.plot(data_frame[x_column], data_frame[y_column], label=graph_labels[index])
-
-
-#     plt.xlabel(x_label)
-#     plt.ylabel(y_label)
-#     plt.legend()
-
-#     plt.savefig(output_file, dpi=1000)
-
-def convertToPng(data_files, x_column, y_columns, graph_labels, x_label, y_label, output_file, log_scale_x, log_scale_y):
+def convertToPng(data_files, x_column, y_columns, graph_labels, x_label, y_label, output_file, log_scale_x, log_scale_y, show_pre_training_seperator):
     matplotlib.rcParams.update({'font.size': 14})
     data_frames = []
     for data_file in data_files:
@@ -38,7 +22,8 @@ def convertToPng(data_files, x_column, y_columns, graph_labels, x_label, y_label
         ax.set_xscale('log')
     if log_scale_y:
         ax.set_yscale('log')
-    # ax.axvline(x=185000, ymin=0, ymax=1, color='#808080')
+    if show_pre_training_seperator:
+        ax.axvline(x=185000, ymin=0, ymax=1, color='#808080')
     for index, data_frame in enumerate(data_frames):
         plt.plot(data_frame[x_column], data_frame[y_columns[index]], label=graph_labels[index])
 
@@ -60,11 +45,12 @@ if __name__ == "__main__":
     parser.add_argument('--output_file', dest='output_file', type=str)
     parser.add_argument('--log_scale_x', dest='log_scale_x', action='store_true')
     parser.add_argument('--log_scale_y', dest='log_scale_y', action='store_true')
+    parser.add_argument('--show_pre_training_seperator', dest='show_pre_training_seperator', action='store_true')
     args = parser.parse_args()
     if args.data_files and args.x_column and args.y_columns and args.graph_labels and args.x_label and args.y_label and args.output_file:
         data_files = args.data_files.split(';')
         graph_labels = args.graph_labels.split(';')
         y_columns = args.y_columns.split(';')
-        convertToPng(data_files, args.x_column, y_columns, graph_labels, args.x_label, args.y_label, args.output_file, args.log_scale_x, args.log_scale_y)
+        convertToPng(data_files, args.x_column, y_columns, graph_labels, args.x_label, args.y_label, args.output_file, args.log_scale_x, args.log_scale_y, args.show_pre_training_seperator)
     else:
         print(f'Not all parameters provided.')

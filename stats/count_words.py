@@ -1,6 +1,8 @@
 import re
 import glob
 
+# Count number of words in dataset
+
 def countWords():
 
     reports_path = './data/multiline_reports/multiline_report*'

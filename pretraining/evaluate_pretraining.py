@@ -9,7 +9,8 @@ import glob
 import re
 import pandas as pd
 import numpy as np
-from multiprocessing import Process, current_process, cpu_count, Queue
+
+# Evaluates the trained model either for parameter optimization with the validation dataset or for final accuracy with test dataset
 
 def evaluatePretraining():
     FLAGS = flags.FLAGS
@@ -59,15 +60,6 @@ def evaluatePretraining():
             per_host_input_for_training=is_per_host))
 
     output_df = pd.DataFrame()
-
-    # checkpoint_path = './data/BERT/uncased_L-12_H-768_A-12/bert_model.ckpt'
-    # result = result = _evaluateModel(checkpoint_path, bert_config, run_config, input_files, max_seq_length, num_train_steps, num_warmup_steps, learning_rate, train_batch_size, eval_batch_size, max_eval_steps, max_predictions_per_seq)
-    # result["epoch"] = 0
-    # result["checkpoint"] = checkpoint_path
-    # output_df = output_df.append(result, ignore_index=True)
-    # logging.info("***Eval results***")
-    # for key in sorted(result.keys()):
-    #     logging.info("  %s = %s", key, str(result[key]))
 
     checkpoints_path = './data/bert_pretraining_checkpoints_2'
     pretrained_checkpoints = checkpoints_path + '/model.ckpt-*'

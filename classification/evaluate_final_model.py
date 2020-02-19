@@ -6,6 +6,8 @@ from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score, classifi
 import os
 import argparse
 
+# Evaluates a scikit-learn model on a test dataset from the specified path
+
 def evaluateFinalModel(model_path, model_name, evaluate_average):
     df_train = pd.read_csv('./data/report_features_std_train.csv', sep='\t')
     X_train = None

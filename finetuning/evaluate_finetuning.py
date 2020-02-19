@@ -11,13 +11,15 @@ import glob
 import re
 import pandas as pd
 
+
+# Evaluates the classification performance of BERT on a test dataset
+
 def evaluateFinetuning():
 
     FLAGS = flags.FLAGS
     FLAGS.mark_as_parsed()
 
     bert_config_file = './data/BERT/uncased_L-12_H-768_A-12/bert_config.json'
-    # vocab_file = './data/BERT/uncased_L-12_H-768_A-12/vocab.txt'
     output_dir = './data'
     max_seq_length = 512
     train_batch_size = 6
@@ -82,8 +84,7 @@ def evaluateFinetuning():
             
 
 
-def _evaluateModel(checkpoint, label_list, number_of_validate_examples, num_train_steps, num_warmup_steps, bert_config, run_config, eval_file, max_seq_length, train_batch_size, eval_batch_size, learning_rate):
-    FLAGS = flags.FLAGS
+def _evaluateModel(checkpoint, label_list, number_of_validate_examples, num_train_steps, num_warmup_steps, bert_config, run_config, eval_file, max_seq_length, train_batch_size, eval_batch_size, learning_rate, predict_batch_size):
     model_fn = model_fn_builder(
                 bert_config=bert_config,
                 num_labels=len(label_list),
@@ -102,7 +103,7 @@ def _evaluateModel(checkpoint, label_list, number_of_validate_examples, num_trai
         config=run_config,
         train_batch_size=train_batch_size,
         eval_batch_size=eval_batch_size,
-        predict_batch_size=FLAGS.predict_batch_size)
+        predict_batch_size=predict_batch_size)
 
     
     logging.info("***** Running evaluation *****")

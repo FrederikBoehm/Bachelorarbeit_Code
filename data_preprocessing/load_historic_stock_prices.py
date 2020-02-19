@@ -6,6 +6,10 @@ import os
 import numpy as np
 import sqlite3
 
+
+# Loads the stock prices from Alphavantage using the provided API Key
+# If stock price is not available, because the company got delisted the error code is written to a file and the program continues
+
 def loadHistoricStockPrices():
     df_multiline_report_index = pd.read_csv('./data/multiline_report_index.csv', sep='\t')
     api_key_file = open('./data/Alphavantage_API_Key.txt', 'r')

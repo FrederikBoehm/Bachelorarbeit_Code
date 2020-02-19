@@ -8,6 +8,10 @@ from report_processor import ReportProcessor
 import os
 import time
 
+
+# Runs Fine-tuning and saves a checkpoint every 22406 steps, which gives 20 checkpoints
+# The checkpoints are later used to evaluate the model
+
 def runFinetuning():
     start_time = time.time()
 
@@ -30,11 +34,8 @@ def runFinetuning():
     save_checkpoints_steps = 22406
     iterations_per_loop = 1000
     
-    # number_of_train_examples = 11298966
     number_of_train_examples = 672176
-    # number_of_validate_examples = 3828636
     number_of_validate_examples = 228060
-    # number_of_test_examples = 0
     train_file = "./data/bert_finetuning_data/train/train.tf_record"
     eval_file = "./data/bert_finetuning_data/validate/validate.tf_record"
 
@@ -65,13 +66,13 @@ def runFinetuning():
     is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
     run_config = tf.contrib.tpu.RunConfig(
         cluster=tpu_cluster_resolver,
-        master=FLAGS.master,
+        master=None,
         model_dir=output_dir,
         save_checkpoints_steps=save_checkpoints_steps,
         keep_checkpoint_max=30,
         tpu_config=tf.contrib.tpu.TPUConfig(
             iterations_per_loop=iterations_per_loop,
-            num_shards=FLAGS.num_tpu_cores,
+            num_shards=8,
             per_host_input_for_training=is_per_host))
 
     num_train_steps = None

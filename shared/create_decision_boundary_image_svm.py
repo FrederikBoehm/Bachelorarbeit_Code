@@ -5,6 +5,10 @@ from sklearn.datasets import make_blobs
 import matplotlib
 from sklearn.preprocessing import StandardScaler
 
+
+# Creates random sample data and fits a SVM to show the hyperplane, margin and support vectors
+# Modified from https://scikit-learn.org/stable/auto_examples/svm/plot_separating_hyperplane.html
+
 def createDecisionBoundaryImageSVM():
     matplotlib.rcParams.update({'font.size': 16})
     

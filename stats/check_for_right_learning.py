@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 
 # Should check whether the classifier bases its decision on the filing company
-# Background: Some companies might always performed good in the training dataset,
+# Background: Some companies might always perform good in the training dataset,
 # therefore the classifier learns that and predicts during test for that company always "positive"
 
 def checkForRightLearning():

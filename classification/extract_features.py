@@ -13,6 +13,8 @@ import os
 from multiprocessing import Process, current_process, cpu_count, Queue
 import time
 
+# Extracts the hidden states from BERT's last layer, calculates the averages and standard deviations and writes them to a CSV file
+# Modified version of extract_features.py from https://github.com/google-research/bert/blob/master/extract_features.py
 
 def extractFeatures():
 

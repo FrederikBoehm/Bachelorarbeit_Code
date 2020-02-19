@@ -8,6 +8,9 @@ from tensorflow.keras.callbacks import Callback, ModelCheckpoint
 from sklearn.preprocessing import StandardScaler
 import os
 
+
+# Trains the LSTM and evaluates it on the test dataset
+
 def runLSTM():
     feature_vector_dimension = 768
     checkpoints_path = "./data/lstm_checkpoints"
@@ -17,7 +20,6 @@ def runLSTM():
 
     # Get x values
     X_train = _getFeatures(train_df['File_Path'])
-    # X = _padToSameLength(X, feature_vector_dimension)
     X_train = np.array(X_train)
     X_train = _scaleFeatures(X_train)
 
@@ -73,19 +75,6 @@ def _getFeatures(file_paths):
 
     return features_all_files
 
-def _padToSameLength(feature_vectors, feature_vector_dimension):
-    report_lengths = map(lambda feature_vector_single_report: len(feature_vector_single_report), feature_vectors)
-    max_length = max(report_lengths)
-    print(f'Padding to a maximum report length of {max_length}')
-
-    for index, feature_vector_single_report in enumerate(feature_vectors):
-        report_length = len(feature_vector_single_report)
-
-        if report_length < max_length:
-            zero_list = [[0 for col in range(feature_vector_dimension)] for row in range(max_length - report_length)]
-            feature_vector_single_report.extend(zero_list)
-
-    return feature_vectors
 
 def _scaleFeatures(transform_values, fit_values=None):
     if fit_values is None:
@@ -151,6 +140,9 @@ class AccuracyMeasurement(Callback):
 
         validate_results[epoch].append(validation_accuracy)
 
+
+# This class groups the the reports by the number of sequences
+# This is necessary because the LSTM requires the input to have the same number of time steps on batch level
 class ReportSequence(Sequence):
 
     def __init__(self, X, y):

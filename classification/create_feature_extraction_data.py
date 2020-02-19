@@ -1,14 +1,15 @@
 try:
-    from create_finetuning_data import concatToMaxSequenceLength
+    from concat_to_max_sequence_length import concatToMaxSequenceLength
 except ImportError:
-    from finetuning.create_finetuning_data import concatToMaxSequenceLength
+    from shared.concat_to_max_sequence_length import concatToMaxSequenceLength
 
 import pandas as pd
 import os
+import argparse
 
-def createFeatureExtractionData():
+# Prepares the data for feature extraction, by concatenating sentences until the max_sequence_length is reached
 
-    max_sequence_length = 512
+def createFeatureExtractionData(max_sequence_length):
 
     df_multiline_report_index = pd.read_csv("./data/multiline_report_index.csv", sep="\t")
     multiline_report_index = df_multiline_report_index.to_dict('records')
@@ -44,7 +45,14 @@ def createFeatureExtractionData():
     output_df.to_csv('./data/multiline_report_index_feature_extraction.csv', sep='\t', index=False)
 
 if __name__ == "__main__":
-    createFeatureExtractionData()
+    parser = argparse.ArgumentParser(description='Parameters to createFeatureExtractionData.')
+    parser.add_argument('--max_sequence_length', dest='max_sequence_length', type=int)
+    args = parser.parse_args()
+    max_sequence_length = args.max_sequence_length
+    if max_sequence_length:
+        createFeatureExtractionData(max_sequence_length)
+    else:
+        print('Provide a value for max_sequence_length, e.g. 128 or 512')
 
 
 

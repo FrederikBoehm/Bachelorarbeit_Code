@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 
+
+# Splits the data for BERT training, since no cross-validation is applied a seperate validation dataset is created
+
 def splitData():
     train_size = 0.6
     validate_size = 0.2

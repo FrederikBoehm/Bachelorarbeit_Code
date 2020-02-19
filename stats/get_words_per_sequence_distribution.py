@@ -3,6 +3,9 @@ import re
 import pandas as pd
 import os
 
+
+# Counts the number of words in a sequence using a regex
+
 def getWordsPerSequenceDistribution():
 
     file_paths = glob.glob('./data/multiline_reports/multiline_report*')

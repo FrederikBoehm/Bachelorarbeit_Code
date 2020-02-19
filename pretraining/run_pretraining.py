@@ -7,6 +7,9 @@ from absl import logging
 import tensorflow as tf
 import time
 
+# Runs the pretraining
+# Modified version of run_pretraining.py from: https://github.com/google-research/bert/blob/master/run_pretraining.py
+
 def runPretraining():
     start_time = time.time()
     _initializeBert()
@@ -32,7 +35,6 @@ def runPretraining():
     logging.set_verbosity(logging.INFO)
 
     
-
     bert_config = BertConfig.from_json_file(bert_config_file)
 
     tf.io.gfile.makedirs(output_dir)

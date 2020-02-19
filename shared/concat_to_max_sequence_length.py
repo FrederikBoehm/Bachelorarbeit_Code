@@ -1,5 +1,8 @@
 import re
 
+
+# Shared function that concatenates the provided lines to the max_seq_length
+
 def concatToMaxSequenceLength(lines, max_seq_length):
 
     max_line_length = int(max_seq_length * 0.9) # We only concat to about 90% of the max_seq_length, so that we don't get longer sequences than max_seq_length after tokenization

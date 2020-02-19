@@ -1,6 +1,8 @@
 import pandas as pd
 import sqlite3
 
+# Labels the reports as positive and negative
+
 def getPriceChanges():
     df_multiline_reports = pd.read_csv('./data/multiline_report_index.csv', sep='\t')
 

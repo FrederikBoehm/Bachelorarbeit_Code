@@ -10,6 +10,12 @@ import subprocess
 from multiprocessing import Process, current_process, cpu_count, Queue
 import time
 
+
+# Parses business reports from companys in the S&P 500 between the 31/12/2003 and the 31/12/2018:
+# Removes the headers and exhibits
+# Applies spaCy sentencizer
+# Removes short and long sentences, sentences that include only capitals, sentences that contain only ... or ---
+
 def prepareDataForBert():
     start_time = time.time()
 

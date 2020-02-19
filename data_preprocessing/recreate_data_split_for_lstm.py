@@ -3,6 +3,9 @@ import random
 from prepare_data_for_classifier import _balanceData
 import re
 
+
+# To gain comparable results, this function recreates the train test datasplit for the LSTM
+
 def recreateDataSplitForLSTM():
     print("Reading data files...")
     std_deviation_index = pd.read_csv("./data/multiline_report_features_index.csv", sep="\t").to_dict('records')

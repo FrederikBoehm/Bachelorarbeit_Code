@@ -2,6 +2,10 @@ import random
 import pandas as pd
 import numpy as np
 
+
+# Splits the data into a train and a test dataset and balances them to have equal positive and negative reports
+# Since cross-validation is applied for the classifiers, a seperate validation dataset is not needed
+
 def prepareDataForClassifier():
     train_size = 0.8
 

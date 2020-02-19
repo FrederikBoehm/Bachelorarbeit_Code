@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import argparse
 
+# Creates a sample learning curve and validation curve for the sample data generated with create_sample_data.py
+
 def createValidationDiagram():
     df_train = pd.read_csv('./sample_data.csv', sep='\t')
 
